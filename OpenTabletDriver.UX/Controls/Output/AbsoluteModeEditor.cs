@@ -255,11 +255,11 @@ namespace OpenTabletDriver.UX.Controls.Output
         {
             if (sender is not AreaDisplay display) return;
 
-            if (!handlingForcedArConstraint && !handlingSettingsChanging && display.LockToUsableArea && display.Area != null)
+            // An editor whose connection dropped before the tablet size arrived has no bounds; there is nothing to clamp to.
+            if (!handlingForcedArConstraint && !handlingSettingsChanging && display.LockToUsableArea && display.Area != null
+                && display.FullAreaBounds is { } fullBounds)
             {
                 handlingForcedArConstraint = true;
-                Debug.Assert(display.FullAreaBounds.HasValue);
-                var fullBounds = display.FullAreaBounds.Value;
 
                 if (fullBounds.Width != 0 && fullBounds.Height != 0)
                 {
