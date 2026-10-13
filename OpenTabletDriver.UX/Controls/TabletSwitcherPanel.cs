@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using Eto.Drawing;
 using Eto.Forms;
 using OpenTabletDriver.Desktop.Profiles;
@@ -53,8 +52,7 @@ namespace OpenTabletDriver.UX.Controls
             tabletSwitcher.ProfilesBinding.BindDataContext<App>(a => a.Settings.Profiles);
 
             App.Driver.TabletsChanged += HandleTabletsChanged;
-            // ReSharper disable once AsyncVoidMethod
-            Application.Instance.AsyncInvoke(async void () => HandleTabletsChanged(this, await App.Driver.Instance!.GetTablets()));
+            Application.Instance.AsyncInvoke(() => HandleTabletsChanged(this, App.Driver.Tablets));
         }
 
         private StackLayout layout;
@@ -90,19 +88,17 @@ namespace OpenTabletDriver.UX.Controls
                 set
                 {
                     this.profiles = value;
-                    // ReSharper disable once AsyncVoidMethod
-                    Application.Instance.AsyncInvoke(async void () => await this.OnProfilesChanged());
+                    Application.Instance.AsyncInvoke(this.OnProfilesChanged);
                 }
                 get => this.profiles;
             }
 
             public event EventHandler<EventArgs>? ProfilesChanged;
 
-            protected virtual async Task OnProfilesChanged()
+            protected virtual void OnProfilesChanged()
             {
                 ProfilesChanged?.Invoke(this, EventArgs.Empty);
-                var tablets = await App.Driver.Instance!.GetTablets();
-                HandleTabletsChanged(this, [.. tablets]);
+                HandleTabletsChanged(this, [.. App.Driver.Tablets]);
             }
 
             public BindableBinding<TabletSwitcher, ProfileCollection> ProfilesBinding

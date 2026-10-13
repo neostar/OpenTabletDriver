@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using Eto.Drawing;
 using Eto.Forms;
 using OpenTabletDriver.Desktop.Profiles;
@@ -63,12 +62,8 @@ namespace OpenTabletDriver.UX
             );
         }
 
-        public static async Task<TabletReference?> GetTabletReference(this Profile profile)
-        {
-            Debug.Assert(App.Driver.IsConnected, "User shouldn't be able to ask for a tablet reference without a connected daemon");
-            var tablets = await App.Driver.Instance.GetTablets();
-            return tablets.FirstOrDefault(t => t.Properties.Name == profile.Tablet);
-        }
+        public static TabletReference? GetTabletReference(this Profile profile) =>
+            App.Driver.Tablets.FirstOrDefault(t => t.Properties.Name == profile.Tablet);
 
         [Obsolete("Please use method specifying an initialFileName. 'null' is an acceptable value")]
         public static T BuildFileDialog<T>(string? title, string? directory, IEnumerable<FileFilter>? filters, bool? multiSelect = null)

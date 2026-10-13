@@ -43,10 +43,9 @@ namespace OpenTabletDriver.UX.Controls.Output
             UpdateTablet();
         }
 
-        // ReSharper disable once AsyncVoidMethod
-        private void UpdateTablet(IEnumerable<TabletReference>? tablets = null) => Application.Instance.AsyncInvoke(async void () =>
+        private void UpdateTablet(IEnumerable<TabletReference>? tablets = null) => Application.Instance.AsyncInvoke(() =>
         {
-            tablets ??= await App.Driver.Instance!.GetTablets();
+            tablets ??= App.Driver.Tablets;
             var selectedTablet = tablets.FirstOrDefault(t => t.Properties.Name == Profile?.Tablet);
             if (selectedTablet != null)
                 SetTabletSize(selectedTablet);

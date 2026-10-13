@@ -425,6 +425,7 @@ namespace OpenTabletDriver.UX
 
             // Load the application information from the daemon
             AppInfo.Current = await App.Driver.Instance.GetApplicationInfo();
+            await App.Driver.RefreshTablets();
 
             AppInfo.PluginManager = new DesktopPluginManager();
             AppInfo.PresetManager = new PresetManager();
@@ -460,8 +461,7 @@ namespace OpenTabletDriver.UX
             await RefreshPresets();
 
             // Update title to new instance
-            if (await App.Driver.Instance.GetTablets() is IEnumerable<TabletReference> tablets)
-                SetTitle(tablets);
+            SetTitle(App.Driver.Tablets);
 
             // Having a mismatch between the version of the daemon and the application will cause issues
             MatchDaemonVersion();
