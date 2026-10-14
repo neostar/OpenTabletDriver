@@ -39,9 +39,22 @@ namespace OpenTabletDriver.UX.Controls.Output
 
             outputModeSelector.SelectedValueChanged += (sender, e) => UpdateOutputMode(Profile?.OutputMode);
 
-            App.Driver.TabletsChanged += (sender, e) => UpdateTablet(e);
             UpdateTablet();
         }
+
+        protected override void OnLoadComplete(EventArgs e)
+        {
+            base.OnLoadComplete(e);
+            App.Driver.TabletsChanged += HandleTabletsChanged;
+        }
+
+        protected override void OnUnLoad(EventArgs e)
+        {
+            App.Driver.TabletsChanged -= HandleTabletsChanged;
+            base.OnUnLoad(e);
+        }
+
+        private void HandleTabletsChanged(object? sender, IEnumerable<TabletReference> tablets) => UpdateTablet(tablets);
 
         // ReSharper disable once AsyncVoidMethod
         private void UpdateTablet(IEnumerable<TabletReference>? tablets = null) => Application.Instance.AsyncInvoke(async void () =>

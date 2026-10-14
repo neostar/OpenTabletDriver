@@ -21,7 +21,7 @@ namespace OpenTabletDriver.UX.Controls
             this.Orientation = Orientation.Vertical;
 
             var filterSelector = new FilterDropDown();
-            filterSelector.SelectedValueChanged += (sender, filter) => this.messageStore.Filter = filterSelector.SelectedValue;
+            filterSelector.SelectedValueChanged += (sender, filter) => messageStore?.Filter = filterSelector.SelectedValue;
 
             var toolbar = new StackLayout
             {
@@ -32,7 +32,7 @@ namespace OpenTabletDriver.UX.Controls
                 Items =
                 {
                     filterSelector,
-                    new Button((sender, e) => Copy(this.messageStore))
+                    new Button((sender, e) => Copy(messageStore ?? Enumerable.Empty<LogMessage>()))
                     {
                         Text = "Copy All"
                     }
@@ -75,24 +75,37 @@ namespace OpenTabletDriver.UX.Controls
         {
             Debug.Assert(App.Driver.IsConnected, "Tried to initialize log view without an active daemon");
             var currentMessages = await App.Driver.Instance.GetCurrentLog();
-            messageList.DataStore = messageStore = new LogDataStore(currentMessages);
+            var store = new LogDataStore(currentMessages);
+            messageList.DataStore = messageStore = store;
 
-            this.messageStore.CollectionChanged += (sender, e) =>
+            store.CollectionChanged += (sender, e) =>
             {
                 Application.Instance.AsyncInvoke(() =>
                 {
-                    if (this.messageStore.Count > 0)
+                    if (store.Count > 0)
                     {
                         if (messageList.SelectedRow == -1)
-                            messageList.ScrollToRow(this.messageStore.Count - 1);
+                            messageList.ScrollToRow(store.Count - 1);
                         else
                             messageList.ScrollToRow(messageList.SelectedRow);
                     }
                 });
             };
-
-            App.Driver.Message += (sender, message) => AddMessage(message);
         }
+
+        protected override void OnLoadComplete(EventArgs e)
+        {
+            base.OnLoadComplete(e);
+            App.Driver.Message += HandleMessage;
+        }
+
+        protected override void OnUnLoad(EventArgs e)
+        {
+            App.Driver.Message -= HandleMessage;
+            base.OnUnLoad(e);
+        }
+
+        private void HandleMessage(object? sender, LogMessage message) => AddMessage(message);
 
         private readonly GridView<LogMessage> messageList = new GridView<LogMessage>
         {
@@ -134,11 +147,13 @@ namespace OpenTabletDriver.UX.Controls
             }
         };
 
-        private LogDataStore messageStore = null!; // initialized asynchronously
+        private LogDataStore? messageStore; // set once the current log has loaded
 
         private void AddMessage(LogMessage message)
         {
-            Application.Instance.AsyncInvoke(() => this.messageStore.Add(message));
+            // Captured on arrival: a message that arrives before the current log has loaded can be part of it, so only its notification shows.
+            var store = messageStore;
+            Application.Instance.AsyncInvoke(() => store?.Add(message));
 
             if (message.Notification)
             {

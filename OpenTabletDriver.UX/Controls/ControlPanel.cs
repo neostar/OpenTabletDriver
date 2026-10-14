@@ -4,6 +4,7 @@ using Eto.Forms;
 using OpenTabletDriver.Desktop.Interop;
 using OpenTabletDriver.Desktop.Profiles;
 using OpenTabletDriver.Plugin;
+using OpenTabletDriver.Plugin.Logging;
 using OpenTabletDriver.Plugin.Output;
 using OpenTabletDriver.Plugin.Tablet;
 using OpenTabletDriver.UX.Controls.Bindings;
@@ -83,15 +84,27 @@ namespace OpenTabletDriver.UX.Controls
             toolEditor.StoreCollectionBinding.Bind(App.Current, a => a.Settings.Tools);
 
             outputModeEditor.SetDisplaySize(DesktopInterop.VirtualScreen?.Displays);
-
-            Log.Output += (_, message) => Application.Instance.AsyncInvoke(() =>
-            {
-                if (message.Level > LogLevel.Info)
-                {
-                    tabControl.SelectedPage = logView.Parent as TabPage;
-                }
-            });
         }
+
+        protected override void OnLoadComplete(EventArgs e)
+        {
+            base.OnLoadComplete(e);
+            Log.Output += HandleLogOutput;
+        }
+
+        protected override void OnUnLoad(EventArgs e)
+        {
+            Log.Output -= HandleLogOutput;
+            base.OnUnLoad(e);
+        }
+
+        private void HandleLogOutput(object? sender, LogMessage message) => Application.Instance.AsyncInvoke(() =>
+        {
+            if (message.Level > LogLevel.Info)
+            {
+                tabControl.SelectedPage = logView.Parent as TabPage;
+            }
+        });
 
         private TabControl tabControl;
         private Placeholder placeholder;
