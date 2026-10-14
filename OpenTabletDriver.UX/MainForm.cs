@@ -51,6 +51,9 @@ namespace OpenTabletDriver.UX
 
             App.Driver.Connected += HandleDaemonConnected;
             App.Driver.Disconnected += HandleDaemonDisconnected;
+            // DaemonRpcClient forwards these from every connection, so they are hooked once here.
+            App.Driver.TabletsChanged += (sender, tablet) => SetTitle(tablet);
+            App.Driver.Resynchronize += async (sender, e) => await SyncSettings();
 
             Application.Instance.InvokeAsync(ConnectToDaemon);
         }
@@ -418,7 +421,6 @@ namespace OpenTabletDriver.UX
             Debug.Assert(App.Driver.IsConnected);
             // Hook events after the instance is (re)instantiated
             Log.Output += LogToDriver;
-            App.Driver.TabletsChanged += (sender, tablet) => SetTitle(tablet);
 
             // Load full menu
             this.Menu = fullMenu;
@@ -438,7 +440,6 @@ namespace OpenTabletDriver.UX
 
             // Synchronize settings
             await SyncSettings();
-            App.Driver.Resynchronize += async (sender, e) => await SyncSettings();
 
             // Set window content
             base.Content = new TabletSwitcherPanel
